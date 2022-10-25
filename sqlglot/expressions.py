@@ -1045,6 +1045,8 @@ class CharacterSetProperty(Property):
 class CollateProperty(Property):
     pass
 
+class DataSourceProperty(Property):
+    pass
 
 class SchemaCommentProperty(Property):
     pass
@@ -1068,6 +1070,9 @@ class ExecuteAsProperty(Property):
 
 class VolatilityProperty(Property):
     arg_types = {"this": True}
+
+class BulkProperty(Property):
+    pass
 
 
 class Properties(Expression):
@@ -2355,6 +2360,29 @@ class Cast(Func):
     def to(self):
         return self.args["to"]
 
+class Openrowset(Func):
+    arg_types = {
+        # "this": True,
+        "bulk": True,
+        "data_source": False,
+        "format": False
+    }
+
+    # @property
+    # def name(self):
+    #     return self.this.name
+
+    @property
+    def bulk(self):
+        return self.args["bulk"]
+
+    @property
+    def data_source(self):
+        return self.args["data_source"]
+
+    @property
+    def format(self):
+        return self.args["format"]
 
 class TryCast(Cast):
     pass

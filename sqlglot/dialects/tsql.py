@@ -182,7 +182,15 @@ class TSQL(Dialect):
             "LEN": exp.Length.from_arg_list,
             "REPLICATE": exp.Repeat.from_arg_list,
             "JSON_VALUE": exp.JSONExtractScalar.from_arg_list,
+            "OPENROWSET": exp.Openrowset,
         }
+
+        FUNCTION_PARSERS = {
+            **Parser.FUNCTION_PARSERS,
+            "OPENROWSET": lambda self: self._parse_openrowset(),
+        }
+
+        FUNC_TOKENS = Parser.FUNC_TOKENS.union({TokenType.OPENROWSET})
 
         VAR_LENGTH_DATATYPES = {
             DataType.Type.NVARCHAR,
@@ -225,6 +233,147 @@ class TSQL(Dialect):
 
             # Entails a simple cast without any format requirement
             return self.expression(exp.Cast if strict else exp.TryCast, this=this, to=to)
+
+        def _parse_openrowset(self):
+            def parse_values():
+                if self._match(TokenType.BULK):
+                    v = self._parse_string()
+                    return ('BULK', v)
+                elif self._match(TokenType.DATA_SOURCE) and self._match(TokenType.EQ):
+                    v = self._parse_string()
+                    return ('DATA_SOURCE', v)
+                elif self._match(TokenType.FORMAT) and self._match(TokenType.EQ):
+                    v = self._parse_string()
+                    return ('FORMAT', v)
+                else:
+                    return None
+
+            # self._match_l_paren()
+            values = self._parse_csv(parse_values)
+            props = {t[0]: t[1] for t in values}
+
+            return self.expression(
+                exp.Openrowset,
+                # this=values,
+                bulk=props["BULK"].name,
+                data_source=props["DATA_SOURCE"].name,
+                format=props["FORMAT"].name,
+            )
+
+        def _parse_table(self, schema=False):
+            lateral = self._parse_lateral()
+
+            if lateral:
+                return lateral
+
+            unnest = self._parse_unnest()
+
+            if unnest:
+                return unnest
+
+            values = self._parse_derived_table_values()
+
+            if values:
+                return values
+
+            subquery = self._parse_select(table=True)
+
+            if subquery:
+                return subquery
+
+            catalog = None
+            db = None
+            table = (not schema and self._parse_function()) or self._parse_id_var(False)
+
+            while self._match(TokenType.DOT):
+                if catalog:
+                    # This allows nesting the table in arbitrarily many dot expressions if needed
+                    table = self.expression(exp.Dot, this=table, expression=self._parse_id_var())
+                else:
+                    catalog = db
+                    db = table
+                    table = self._parse_id_var()
+            
+            if self._match(TokenType.OPENROWSET):
+                self._advance(-1)
+                table = self._parse_function()
+            
+            if not table:
+                self.raise_error("Expected table name")
+
+            this = self.expression(exp.Table, this=table, db=db, catalog=catalog, pivots=self._parse_pivots())
+
+            if self._match(TokenType.WITH):
+                # inline schema
+                this = self._parse_schema(this=this)
+
+            if schema:
+                return self._parse_schema(this=this)        
+
+            if self.alias_post_tablesample:
+                table_sample = self._parse_table_sample()
+
+            alias = self._parse_table_alias()
+
+            if alias:
+                this.set("alias", alias)
+
+            if not self.alias_post_tablesample:
+                table_sample = self._parse_table_sample()
+
+            if table_sample:
+                table_sample.set("this", this)
+                this = table_sample
+            
+            if self._match(TokenType.GO):
+                pass
+            
+            return this
+        def _parse_create(self):
+            replace = self._match(TokenType.OR) and (self._match(TokenType.REPLACE) or self._match(TokenType.ALTER))
+            temporary = self._match(TokenType.TEMPORARY)
+            unique = self._match(TokenType.UNIQUE)
+            materialized = self._match(TokenType.MATERIALIZED)
+
+            if self._match_pair(TokenType.TABLE, TokenType.FUNCTION, advance=False):
+                self._match(TokenType.TABLE)
+
+            create_token = self._match_set(self.CREATABLES) and self._prev
+
+            if not create_token:
+                self.raise_error(f"Expected {self.CREATABLES}")
+                return
+
+            exists = self._parse_exists(not_=True)
+            this = None
+            expression = None
+            properties = None
+
+            if create_token.token_type in (TokenType.FUNCTION, TokenType.PROCEDURE):
+                this = self._parse_user_defined_function()
+                properties = self._parse_properties()
+                if self._match(TokenType.ALIAS):
+                    expression = self._parse_select_or_expression()
+            elif create_token.token_type == TokenType.INDEX:
+                this = self._parse_index()
+            elif create_token.token_type in (TokenType.TABLE, TokenType.VIEW, TokenType.SCHEMA):
+                this = self._parse_table(schema=True)
+                properties = self._parse_properties()
+                if self._match(TokenType.ALIAS):
+                    expression = self._parse_select(nested=True)
+
+            return self.expression(
+                exp.Create,
+                this=this,
+                kind=create_token.text,
+                expression=expression,
+                exists=exists,
+                properties=properties,
+                temporary=temporary,
+                replace=replace,
+                unique=unique,
+                materialized=materialized,
+            )
 
     class Generator(Generator):
         TYPE_MAPPING = {

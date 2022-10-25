@@ -734,6 +734,13 @@ class Generator:
         this = self.sql(expression, "this")
         return f"{this}{self.seg('OFFSET')} {self.sql(expression, 'expression')}"
 
+    def openrowset_sql(self, expression):
+        this = self.sql(expression, "this")
+        bulk = f"BULK '{self.sql(expression, 'bulk')}'"
+        data_source = f", data_source = {self.sql(expression, 'data_source')}" if expression.args.get("data_source") else ""
+        format = f", format = {self.sql(expression, 'format')}" if expression.args.get("format") else ""
+        return f"OPENROWSET({bulk}{data_source}{format})"
+
     def literal_sql(self, expression):
         text = expression.this or ""
         if expression.is_string:

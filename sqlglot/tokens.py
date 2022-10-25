@@ -45,6 +45,7 @@ class TokenType(AutoName):
 
     SPACE = auto()
     BREAK = auto()
+    GO = auto()
 
     STRING = auto()
     NUMBER = auto()
@@ -115,6 +116,7 @@ class TokenType(AutoName):
     BETWEEN = auto()
     BOTH = auto()
     BUCKET = auto()
+    BULK = auto()
     BY_DEFAULT = auto()
     CACHE = auto()
     CALL = auto()
@@ -135,6 +137,7 @@ class TokenType(AutoName):
     CURRENT_ROW = auto()
     CURRENT_TIME = auto()
     CURRENT_TIMESTAMP = auto()
+    DATA_SOURCE = auto()
     DEFAULT = auto()
     DELETE = auto()
     DESC = auto()
@@ -208,6 +211,7 @@ class TokenType(AutoName):
     OFFSET = auto()
     ON = auto()
     ONLY = auto()
+    OPENROWSET = auto()
     OPTIMIZE = auto()
     OPTIONS = auto()
     ORDER_BY = auto()
@@ -429,6 +433,7 @@ class Tokenizer(metaclass=_Tokenizer):
         "BETWEEN": TokenType.BETWEEN,
         "BOTH": TokenType.BOTH,
         "BUCKET": TokenType.BUCKET,
+        "BULK": TokenType.BULK,
         "CALL": TokenType.CALL,
         "CACHE": TokenType.CACHE,
         "UNCACHE": TokenType.UNCACHE,
@@ -446,6 +451,7 @@ class Tokenizer(metaclass=_Tokenizer):
         "CURRENT_DATE": TokenType.CURRENT_DATE,
         "CURRENT ROW": TokenType.CURRENT_ROW,
         "CURRENT_TIMESTAMP": TokenType.CURRENT_TIMESTAMP,
+        "DATA_SOURCE": TokenType.DATA_SOURCE,
         "DEFAULT": TokenType.DEFAULT,
         "DELETE": TokenType.DELETE,
         "DESC": TokenType.DESC,
@@ -474,6 +480,7 @@ class Tokenizer(metaclass=_Tokenizer):
         "FOREIGN KEY": TokenType.FOREIGN_KEY,
         "FORMAT": TokenType.FORMAT,
         "FROM": TokenType.FROM,
+        "GO": TokenType.GO,
         "GROUP BY": TokenType.GROUP_BY,
         "GROUPING SETS": TokenType.GROUPING_SETS,
         "HAVING": TokenType.HAVING,
@@ -514,6 +521,7 @@ class Tokenizer(metaclass=_Tokenizer):
         "OFFSET": TokenType.OFFSET,
         "ON": TokenType.ON,
         "ONLY": TokenType.ONLY,
+        "OPENROWSET": TokenType.OPENROWSET,
         "OPTIMIZE": TokenType.OPTIMIZE,
         "OPTIONS": TokenType.OPTIONS,
         "OR": TokenType.OR,
