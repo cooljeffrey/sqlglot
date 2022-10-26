@@ -296,40 +296,18 @@ class TestTSQL(Validator):
         )
 
     def test_create_or_alter(self):
-        self.validate_all(
-            """
+        sql = """
             CREATE
                 OR
 
-            ALTER VIEW [social_prod].[social_group__history]
+            ALTER VIEW [schema].[xxx]
             AS
             SELECT CAST([id] AS BIGINT) AS [id]
                 ,[title]
-                ,CAST([user_id] AS BIGINT) AS [user_id]
-                ,CAST([instance_id] AS BIGINT) AS [instance_id]
-                ,CAST([visibility] AS INT) AS [visibility]
-                ,CAST([created] AS BIGINT) AS [created]
-                ,CAST([updated] AS BIGINT) AS [updated]
-                ,[type]
-                ,CAST([premium] AS SMALLINT) AS [premium]
-                ,[zRecordType]
-                ,CAST([zRecordTime] AS DATETIME2) AS [zRecordTime]
-                ,[zPipeline]
                 ,CAST(R.filepath(1) AS DATE) AS [zPartKey]
-            FROM OPENROWSET(BULK 'social_group.history/zPartKey=*/*.parquet', DATA_SOURCE = 'social_prod', FORMAT = 'PARQUET') WITH (
+            FROM OPENROWSET(BULK 'xxx.history/zPartKey=*/*.parquet', DATA_SOURCE = 'datasource', FORMAT = 'PARQUET') WITH (
                     [id] VARCHAR(20) COLLATE Latin1_General_100_BIN2_UTF8
                     ,[title] NVARCHAR(255) COLLATE Latin1_General_100_BIN2_UTF8
-                    ,[user_id] VARCHAR(20) COLLATE Latin1_General_100_BIN2_UTF8
-                    ,[instance_id] VARCHAR(20) COLLATE Latin1_General_100_BIN2_UTF8
-                    ,[visibility] VARCHAR(20) COLLATE Latin1_General_100_BIN2_UTF8
-                    ,[created] VARCHAR(20) COLLATE Latin1_General_100_BIN2_UTF8
-                    ,[updated] VARCHAR(20) COLLATE Latin1_General_100_BIN2_UTF8
-                    ,[type] VARCHAR(255) COLLATE Latin1_General_100_BIN2_UTF8
-                    ,[premium] VARCHAR(2) COLLATE Latin1_General_100_BIN2_UTF8
-                    ,[zRecordType] VARCHAR(30) COLLATE Latin1_General_100_BIN2_UTF8
-                    ,[zRecordTime] VARCHAR(30) COLLATE Latin1_General_100_BIN2_UTF8
-                    ,[zPipeline] VARCHAR(30) COLLATE Latin1_General_100_BIN2_UTF8
                     ) AS R
-            GO
             """
-        )
+        self.validate_all(sql)

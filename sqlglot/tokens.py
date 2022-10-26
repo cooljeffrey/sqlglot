@@ -480,7 +480,6 @@ class Tokenizer(metaclass=_Tokenizer):
         "FOREIGN KEY": TokenType.FOREIGN_KEY,
         "FORMAT": TokenType.FORMAT,
         "FROM": TokenType.FROM,
-        "GO": TokenType.GO,
         "GROUP BY": TokenType.GROUP_BY,
         "GROUPING SETS": TokenType.GROUPING_SETS,
         "HAVING": TokenType.HAVING,
